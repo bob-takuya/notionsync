@@ -1,5 +1,5 @@
 """
-NotionSync - Utilities Module
+NotionSync Utils Module
 
 This module provides utility functions for NotionSync.
 """

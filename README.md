@@ -122,8 +122,7 @@ notionsync/
 │       ├── __init__.py
 │       └── helpers.py    # Helper utilities
 ├── tests/                # Test suite
-│   ├── unit/             # Unit tests
-│   └── integration/      # Integration tests
+│   └── integration/      # Integration tests with real Notion API
 ├── setup.py              # Package setup
 └── README.md             # This file
 ```
@@ -170,15 +169,43 @@ MIT
 
 ## 統合テスト
 
-統合テストは実際のNotion APIを使用してNotionSyncの機能をテストします。以下の手順で設定してください：
+NotionSyncは実際のNotion APIを使用したテストケースを実装しています。以下の手順で統合テストを実行できます。
 
-1. Notionインテグレーションを作成し、APIキーを取得します。
-2. `.env`ファイルにAPIキーとページURLを設定します。
-3. Notionのウェブサイトでテスト用ページを開き、右上の「Share」ボタンをクリックします。
-4. インテグレーションを選択して「Invite」をクリックし、インテグレーションとページを共有します。
-5. 統合テストを実行します:
+1. Notionインテグレーションを作成し、APIキーを取得します:
+   - https://www.notion.so/my-integrations にアクセス
+   - "New integration"をクリック
+   - 名前を入力（例: NotionSync Test）
+   - "Submit"をクリック
+   - "Internal Integration Token"（APIキー）をコピー
+
+2. `.env`ファイルにAPIキーとページURLを設定します:
    ```
-   python -m pytest tests/integration/test_notion_integration.py -v
+   NOTION_API_KEY=your_notion_api_key_here
+   NOTION_PAGE_URL=https://www.notion.so/your_page_url
+   # データベーステスト用（必要な場合）
+   # NOTION_DATABASE_ID=your_database_id_here
    ```
 
-統合テストはデフォルトでスキップされますが、上記の設定が完了していれば自動的に実行されます。 
+3. Notionのウェブサイトでテスト用ページを開き、インテグレーションと共有します:
+   - Notionページを開く
+   - 右上の「Share」ボタンをクリック
+   - インテグレーションを選択して「Invite」をクリック
+
+4. 統合テストを実行します:
+   ```
+   python -m pytest tests/integration/test_notion_workflow.py -v
+   ```
+
+これにより、以下のユースケースがテストされます:
+
+- 初期セットアップとindex.md自動生成
+- ローカルでの文書作成とstatusコマンド
+- commitコマンドの実行
+- pushコマンドの実行
+- Notion上での編集後のpullコマンド
+- logコマンドの検証
+- ローカル編集後の再編集フロー
+- エラーハンドリングおよび不正操作の検証
+- データベース統合テスト（NOTION_DATABASE_ID設定時）
+
+テストは各ステップで一時的なディレクトリを作成し、テスト完了後に自動的に削除されます。 

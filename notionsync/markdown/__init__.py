@@ -1,7 +1,7 @@
 """
-NotionSync - Markdown Module
+NotionSync Markdown Module
 
-This module handles the parsing and conversion of Markdown files.
+This module handles the conversion between Markdown and Notion blocks.
 """
 
 from .converter import MarkdownConverter
