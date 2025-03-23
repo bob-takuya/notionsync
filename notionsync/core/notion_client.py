@@ -123,6 +123,9 @@ class NotionApiClient:
                     # Get the full page details
                     page_details = self.get_page(block["id"])
                     child_pages.append(page_details)
+                elif block["type"] == "child_database":
+                    # Future enhancement: handle child databases
+                    console.print(f"[yellow]Found child database: {block['id']} (databases not fully supported yet)[/yellow]")
             
             return child_pages
         except Exception as e:

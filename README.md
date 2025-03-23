@@ -10,12 +10,13 @@ NotionSync is a Git-like CLI tool for syncing Markdown files with Notion pages. 
 - Simple version history of Notion content
 - Support for Notion databases
 - Advanced Markdown formatting conversion (code blocks, quotes, etc.)
+- Support for Notion child pages
 
 ## Installation
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/notionsync.git
+   git clone https://github.com/bob-takuya/notionsync.git
    cd notionsync
    ```
 
@@ -131,25 +132,209 @@ notionsync/
 
 NotionSync supports the following Markdown elements:
 
+### Text and Paragraphs
+
+- **Paragraphs**: Separated by blank lines
+  ```
+  This is a paragraph.
+
+  This is another paragraph.
+  ```
+
+### Headings
+
 - **Headings**: `#`, `##`, `###` (H1, H2, H3)
-- **Text formatting**:
-  - **Bold**: `**text**` or `__text__`
-  - **Italic**: `*text*` or `_text_`
-  - **Strikethrough**: `~~text~~`
-  - **Inline code**: `` `code` ``
-- **Lists**:
-  - **Bullet**: `- item`
-  - **Numbered**: `1. item`
-- **Checkboxes**: `- [ ] task`, `- [x] completed task`
-- **Code blocks**: ````language\ncode\n``` (with language support)
-- **Quotes**: `> quoted text`
-- **Tables**: Standard Markdown table format
-- **Horizontal rules**: `---`
-- **Links**: `[text](URL)`
-- **Images**: `![alt text](URL)`
-- **Math**:
-  - **Block math**: `$$` enclosed equations
-  - **Inline math**: `$` enclosed equations (displays as italic text only)
+  ```markdown
+  # Heading 1
+  ## Heading 2
+  ### Heading 3
+  ```
+
+### Text Formatting
+
+- **Bold**: `**text**` or `__text__`
+  ```markdown
+  **Bold text** or __Bold text__
+  ```
+
+- **Italic**: `*text*` or `_text_`
+  ```markdown
+  *Italic text* or _Italic text_
+  ```
+
+- **Strikethrough**: `~~text~~`
+  ```markdown
+  ~~Strikethrough text~~
+  ```
+
+- **Inline code**: `` `code` ``
+  ```markdown
+  `inline code`
+  ```
+
+- **Combined formatting**: 
+  ```markdown
+  **Bold text with *italic* inside**
+  ```
+
+### Lists
+
+- **Bullet lists**: 
+  ```markdown
+  - Item 1
+  - Item 2
+  - Item 3
+  ```
+
+- **Numbered lists**: 
+  ```markdown
+  1. First item
+  2. Second item
+  3. Third item
+  ```
+
+- **Nested lists**: 
+  ```markdown
+  - Main item
+    - Sub-item 1
+    - Sub-item 2
+  - Another main item
+  ```
+
+- **Mixed lists**: 
+  ```markdown
+  1. First numbered item
+     - Bullet sub-item
+     - Another bullet sub-item
+  2. Second numbered item
+  ```
+
+### Task Lists
+
+- **Checkboxes/To-do items**: 
+  ```markdown
+  - [ ] Uncompleted task
+  - [x] Completed task
+  ```
+
+- **Nested tasks**: 
+  ```markdown
+  - [ ] Main task
+    - [ ] Subtask 1
+    - [x] Subtask 2
+  ```
+
+### Code Blocks
+
+- **Code blocks**: 
+  ```markdown
+  ```python
+  def hello():
+      print('Hello, world!')
+  ```
+  ```
+
+- **Supported languages**: Python, JavaScript, Java, C, C++, C#, Ruby, Go, Rust, PHP, TypeScript, HTML, CSS, SQL, Bash, and many more.
+
+### Blockquotes
+
+- **Blockquotes**: 
+  ```markdown
+  > This is a blockquote
+  > It can span multiple lines
+  ```
+
+- **Nested blockquotes**: 
+  ```markdown
+  > Outer quote
+  > > Nested quote
+  ```
+
+### Tables
+
+- **Tables**: 
+  ```markdown
+  | Header 1 | Header 2 |
+  |----------|----------|
+  | Cell 1   | Cell 2   |
+  | Cell 3   | Cell 4   |
+  ```
+
+### Links and Images
+
+- **Links**: 
+  ```markdown
+  [Link text](https://example.com)
+  ```
+
+- **Images**: 
+  ```markdown
+  ![Alt text](https://example.com/image.jpg)
+  ```
+
+### Horizontal Rules
+
+- **Horizontal rules**: 
+  ```markdown
+  ---
+  ```
+
+### Special Blocks
+
+- **Callout blocks**: (Custom syntax for Notion callouts)
+  ```markdown
+  ::: callout 💡
+      This is a callout with an emoji.
+  :::
+  ```
+
+- **Math equations**: (Limited support)
+  ```markdown
+  $E = mc^2$
+  ```
+
+## Working with Child Pages
+
+NotionSync supports working with Notion's hierarchical page structure. When you pull content from Notion, both the main page and its child pages will be retrieved:
+
+- The main page content is saved to `index.md`
+- Each child page is saved as a separate Markdown file
+- The filename is derived from the page title
+
+### Example
+
+A Notion workspace with this structure:
+```
+Main Page
+├── Child Page A
+│   └── Nested Page 1
+└── Child Page B
+```
+
+Will be pulled as:
+```
+index.md          # Contains Main Page content
+Child Page A.md   # Contains Child Page A content
+Nested Page 1.md  # Contains Nested Page 1 content
+Child Page B.md   # Contains Child Page B content
+```
+
+### Creating Child Pages
+
+Any Markdown file (other than `index.md`) in your workspace will be pushed to Notion as a child page of your main page. The filename (without the `.md` extension) will be used as the page title.
+
+For example:
+```
+index.md          # Main page content
+Project Plan.md   # Will become a child page titled "Project Plan"
+Meeting Notes.md  # Will become a child page titled "Meeting Notes"
+```
+
+### Limitations
+
+- Currently supports up to 5 levels of nested pages
+- All child pages are saved as flat files in the root directory, regardless of their nesting in Notion
+- Child database pages are detected but not fully supported yet
 
 ## Troubleshooting
 
@@ -162,6 +347,7 @@ NotionSync supports the following Markdown elements:
   - **"No accessible page found" error**: Check that your integration is properly shared with the page
   - **Page ID error**: Verify that your Notion page URL is correct
   - **Too many blocks**: Large Markdown files might exceed Notion's limit (will be automatically split)
+  - **Missing child pages**: Ensure you're using the latest version that supports child pages
 
 ## License
 

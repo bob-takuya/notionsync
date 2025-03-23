@@ -414,35 +414,62 @@ class NotionSync:
             
             console.print(f"[green]Saved main page content to index.md[/green]")
             
-            # Get child pages
-            child_pages = self.notion_client.get_child_pages(self.notion_client.page_id)
+            # Process child pages recursively
+            child_pages_count = self._pull_child_pages(self.notion_client.page_id)
             
-            # Process each child page
-            for child_page in child_pages:
-                child_id = child_page["id"]
-                child_title = child_page["properties"]["title"]["title"][0]["plain_text"]
-                
-                # Sanitize title for filename
-                safe_title = "".join(c if c.isalnum() or c in [' ', '.', '-', '_'] else '_' for c in child_title)
-                
-                # Get child page content
-                child_content = self.notion_client.get_page_content(child_id)
-                
-                # Convert blocks to markdown
-                child_markdown = self.markdown_converter.notion_blocks_to_markdown(child_content)
-                
-                # Save to file
-                with open(f"{safe_title}.md", "w", encoding="utf-8") as f:
-                    f.write(f"# {child_title}\n\n{child_markdown}")
-                
-                console.print(f"[green]Saved child page {child_title} to {safe_title}.md[/green]")
-            
-            console.print(f"[green]Successfully pulled page and {len(child_pages)} child pages from Notion[/green]")
+            console.print(f"[green]Successfully pulled page and {child_pages_count} child pages from Notion[/green]")
             return True
             
         except Exception as e:
             console.print(f"[bold red]Error pulling from Notion: {e}[/bold red]")
             return False
+    
+    def _pull_child_pages(self, parent_page_id, prefix="", level=1):
+        """
+        Recursively pull child pages from a parent page
+        
+        Args:
+            parent_page_id: The ID of the parent page
+            prefix: Prefix for the filename to indicate nesting (for future implementation)
+            level: Current nesting level
+            
+        Returns:
+            int: Total number of child pages pulled
+        """
+        # Get child pages
+        child_pages = self.notion_client.get_child_pages(parent_page_id)
+        total_pages = len(child_pages)
+        
+        # Process each child page
+        for child_page in child_pages:
+            child_id = child_page["id"]
+            child_title = child_page["properties"]["title"]["title"][0]["plain_text"]
+            
+            # Sanitize title for filename
+            safe_title = "".join(c if c.isalnum() or c in [' ', '.', '-', '_'] else '_' for c in child_title)
+            file_name = f"{prefix}{safe_title}.md"
+            
+            # Get child page content
+            child_content = self.notion_client.get_page_content(child_id)
+            
+            # Convert blocks to markdown
+            child_markdown = self.markdown_converter.notion_blocks_to_markdown(child_content)
+            
+            # Save to file
+            with open(file_name, "w", encoding="utf-8") as f:
+                f.write(f"# {child_title}\n\n{child_markdown}")
+            
+            console.print(f"[green]Saved child page {child_title} to {file_name}[/green]")
+            
+            # Recursively process child pages of this page 
+            # Stop at a reasonable depth to prevent infinite recursion
+            if level < 5:  # Max depth of 5 levels
+                # For future: implement hierarchical directory structure
+                # For now, we just pull all pages as flat files
+                nested_count = self._pull_child_pages(child_id, prefix, level + 1)
+                total_pages += nested_count
+        
+        return total_pages
     
     def status(self):
         """Check status of local changes compared to the last commit"""
