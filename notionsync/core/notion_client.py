@@ -92,4 +92,66 @@ class NotionApiClient:
             return page
         except Exception as e:
             console.print(f"[bold red]Error creating page: {e}[/bold red]")
+            raise
+    
+    def get_page_content(self, page_id):
+        """Get the content blocks of a Notion page"""
+        try:
+            return self.client.blocks.children.list(block_id=page_id)["results"]
+        except Exception as e:
+            console.print(f"[bold red]Error retrieving page content: {e}[/bold red]")
+            raise
+    
+    def delete_block(self, block_id):
+        """Delete a Notion block"""
+        try:
+            return self.client.blocks.delete(block_id=block_id)
+        except Exception as e:
+            console.print(f"[bold red]Error deleting block: {e}[/bold red]")
+            raise
+    
+    def get_child_pages(self, parent_page_id):
+        """Get all child pages of a Notion page"""
+        try:
+            # Query for all child blocks
+            blocks = self.client.blocks.children.list(block_id=parent_page_id)["results"]
+            
+            # Filter for child page blocks
+            child_pages = []
+            for block in blocks:
+                if block["type"] == "child_page":
+                    # Get the full page details
+                    page_details = self.get_page(block["id"])
+                    child_pages.append(page_details)
+            
+            return child_pages
+        except Exception as e:
+            console.print(f"[bold red]Error retrieving child pages: {e}[/bold red]")
+            raise
+    
+    def clear_page_content(self, page_id):
+        """Clear all content from a Notion page"""
+        try:
+            # Get all blocks
+            blocks = self.get_page_content(page_id)
+            
+            # Delete each block
+            for block in blocks:
+                self.delete_block(block["id"])
+            
+            return True
+        except Exception as e:
+            console.print(f"[bold red]Error clearing page content: {e}[/bold red]")
+            raise
+    
+    def create_database(self, parent, title, properties):
+        """Create a new Notion database"""
+        try:
+            return self.client.databases.create(
+                parent=parent,
+                title=[{"text": {"content": title}}],
+                properties=properties
+            )
+        except Exception as e:
+            console.print(f"[bold red]Error creating database: {e}[/bold red]")
             raise 
