@@ -439,3 +439,50 @@ This tests conversion of frontmatter to Notion database properties.
         assert "Number 1" in converted_markdown
         assert "Number 1.1.1" in converted_markdown
         assert "Bullet in number list" in converted_markdown 
+    
+    def test_nested_checklist_to_notion_and_back(self):
+        """Test hierarchical checklist (to-do list) conversion"""
+        # Simple 2-level nested structure with clear indentation
+        markdown = """- [ ] Top level 1
+  - [x] Nested under top 1
+  - [ ] Also nested under top 1
+- [x] Top level 2
+  - [ ] Nested under top 2"""
+        
+        blocks = self.converter.markdown_to_notion_blocks(markdown)
+        
+        # Verify the structure
+        assert len(blocks) == 2, f"Expected 2 top-level blocks, got {len(blocks)}: {blocks}"
+        
+        # Check first top-level item
+        assert blocks[0]["type"] == "to_do"
+        assert blocks[0]["to_do"]["rich_text"][0]["text"]["content"] == "Top level 1"
+        assert blocks[0]["to_do"]["checked"] == False
+        
+        # Check children of first item
+        assert "children" in blocks[0], "First top-level item should have children"
+        assert len(blocks[0]["children"]) == 2, f"First item should have 2 children, got {len(blocks[0]['children'])}"
+        
+        # Check second top-level item
+        assert blocks[1]["type"] == "to_do"
+        assert blocks[1]["to_do"]["rich_text"][0]["text"]["content"] == "Top level 2"
+        assert blocks[1]["to_do"]["checked"] == True
+        
+        # Check child of second item
+        assert "children" in blocks[1], "Second top-level item should have children"
+        assert len(blocks[1]["children"]) == 1, "Second item should have 1 child"
+        
+        # Convert back to markdown
+        converted_markdown = self.converter.notion_blocks_to_markdown(blocks)
+        
+        # Content preservation
+        assert "Top level 1" in converted_markdown
+        assert "Nested under top 1" in converted_markdown
+        assert "Also nested under top 1" in converted_markdown
+        assert "Top level 2" in converted_markdown
+        assert "Nested under top 2" in converted_markdown
+        
+        # Verify indentation in the result
+        lines = converted_markdown.strip().split("\n")
+        indented_lines = [line for line in lines if line.startswith("    ")]
+        assert len(indented_lines) >= 3, "Should have at least 3 indented lines for nested items" 
