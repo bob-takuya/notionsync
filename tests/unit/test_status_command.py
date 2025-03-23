@@ -130,5 +130,5 @@ class TestStatusCommand:
         # Verify output
         assert result.exit_code == 0
         assert "Changes since last commit" in result.output
-        assert "Modified Files" in result.output
-        assert "New Files" in result.output 
+        assert "index.md" in result.output
+        assert "new_file.md" in result.output 
