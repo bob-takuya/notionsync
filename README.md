@@ -301,6 +301,32 @@ NotionSync supports working with Notion's hierarchical page structure. When you 
 - Each child page is saved as a separate Markdown file
 - The filename is derived from the page title
 
+### Embedded Child Pages
+
+Notion allows child pages to appear between paragraphs or other content. When you pull content from Notion, these embedded child pages will be represented in the Markdown as links to the corresponding child page file:
+
+```markdown
+This is content before the child page.
+
+## Section Before
+
+[📄 Embedded Child Page](Embedded Child Page.md)
+
+## Section After
+
+This is content after the child page.
+```
+
+The child page itself will be saved as a separate Markdown file, just like any other child page:
+
+```markdown
+# Embedded Child Page
+
+This is content inside the embedded child page.
+```
+
+When pushing content back to Notion, child pages will be created as separate pages under the parent page, with the file name (minus the `.md` extension) used as the page title.
+
 ### Example
 
 A Notion workspace with this structure:

@@ -33,6 +33,9 @@ class MarkdownConverter:
             block_type = block["type"]
             if block_type not in block:
                 raise ValueError(f"Block is missing content for type '{block_type}': {block}")
+            
+            # Clean up internal attributes we don't want to send to Notion
+            self._cleanup_block(block)
         
         return blocks
     
@@ -332,43 +335,67 @@ class MarkdownConverter:
                 })
                 
             # Task list items
-            elif re.match(r'^- \[([ x])\] ', line.strip()):
-                match = re.match(r'^- \[([ x])\] (.*)', line.strip())
-                checked = match.group(1) == 'x'
-                content = match.group(2)
-                blocks.append({
+            elif re.match(r'^(\s*)- \[([ x])\] ', line):
+                # Get indentation level and content
+                match = re.match(r'^(\s*)- \[([ x])\] (.*)', line)
+                indentation = match.group(1)
+                indent_level = len(indentation) // 2  # Assuming 2 spaces per level
+                checked = match.group(2) == 'x'
+                content = match.group(3)
+                
+                rich_text = self.process_inline_formatting(content)
+                todo_block = {
                     "object": "block",
                     "type": "to_do",
                     "to_do": {
-                        "rich_text": [{"type": "text", "text": {"content": content}}],
+                        "rich_text": rich_text if rich_text else [{"type": "text", "text": {"content": content}}],
                         "checked": checked
                     }
-                })
+                }
+                
+                # Handle indentation (nesting)
+                self._add_block_with_nesting(blocks, todo_block, indent_level)
             
             # Bullet list items
-            elif line.strip().startswith('- ') and not re.match(r'^- \[([ x])\] ', line.strip()):
-                content = line.strip()[2:]
+            elif re.match(r'^(\s*)- ', line) and not re.match(r'^(\s*)- \[([ x])\] ', line):
+                # Get indentation level and content
+                match = re.match(r'^(\s*)- (.*)', line)
+                indentation = match.group(1)
+                indent_level = len(indentation) // 2  # Assuming 2 spaces per level
+                content = match.group(2)
+                
                 rich_text = self.process_inline_formatting(content)
-                blocks.append({
+                bullet_block = {
                     "object": "block",
                     "type": "bulleted_list_item",
                     "bulleted_list_item": {
                         "rich_text": rich_text if rich_text else [{"type": "text", "text": {"content": content}}]
                     }
-                })
+                }
                 
+                # Handle indentation (nesting)
+                self._add_block_with_nesting(blocks, bullet_block, indent_level)
+            
             # Numbered list items
-            elif re.match(r'^\d+\.\s', line.strip()):
-                content = re.sub(r'^\d+\.\s', '', line.strip())
+            elif re.match(r'^(\s*)\d+\.\s', line):
+                # Get indentation level and content
+                match = re.match(r'^(\s*)\d+\.\s(.*)', line)
+                indentation = match.group(1)
+                indent_level = len(indentation) // 2  # Assuming 2 spaces per level
+                content = match.group(2)
+                
                 rich_text = self.process_inline_formatting(content)
-                blocks.append({
+                numbered_block = {
                     "object": "block",
                     "type": "numbered_list_item",
                     "numbered_list_item": {
                         "rich_text": rich_text if rich_text else [{"type": "text", "text": {"content": content}}]
                     }
-                })
+                }
                 
+                # Handle indentation (nesting)
+                self._add_block_with_nesting(blocks, numbered_block, indent_level)
+            
             # Paragraph
             elif line.strip():
                 rich_text = self.process_inline_formatting(line.strip())
@@ -627,6 +654,13 @@ class MarkdownConverter:
                 markdown_lines.append(":::")
                 markdown_lines.append("")  # Add empty line after callout
                 
+            elif block_type == "child_page":
+                # Handle child page blocks
+                page_title = block["child_page"].get("title", "Untitled")
+                # Create a link to the child page
+                markdown_lines.append(f"[📄 {page_title}]({page_title}.md)")
+                markdown_lines.append("")  # Add empty line after child page reference
+                
             elif block_type == "table":
                 table_rows = []
                 has_header = block["table"].get("has_column_header", False)
@@ -704,4 +738,56 @@ class MarkdownConverter:
             
             result.append(content)
         
-        return "".join(result) 
+        return "".join(result)
+    
+    def _add_block_with_nesting(self, blocks, new_block, level):
+        """Add a block to the blocks list with appropriate nesting based on level"""
+        if level == 0:
+            # Top level - directly add to blocks
+            blocks.append(new_block)
+            return
+        
+        # We need to track blocks at each level to determine the correct parent
+        last_block_at_level = {}
+        
+        # Scan backward through blocks to find potential parents
+        for i in range(len(blocks) - 1, -1, -1):
+            block = blocks[i]
+            if block.get("type") not in ["bulleted_list_item", "numbered_list_item", "to_do"]:
+                continue
+            
+            # Determine this block's level
+            block_level = 0
+            current = block
+            while "parent_level" in current:
+                block_level = current["parent_level"] + 1
+                break
+            
+            # Remember the last block we've seen at each level
+            last_block_at_level[block_level] = i
+            
+            # If we find a block at the parent level of our new block
+            if block_level == level - 1:
+                # This is a potential parent for our new block
+                if "children" not in block:
+                    block["children"] = []
+                
+                # Add as child and track the parent level for future reference
+                new_block["parent_level"] = block_level
+                block["children"].append(new_block)
+                return
+        
+        # If no parent found at the appropriate level, add at the root level
+        # This handles cases where indentation might be irregular
+        blocks.append(new_block) 
+    
+    def _cleanup_block(self, block):
+        """Clean up internal attributes from a block and its children"""
+        # Remove internal attributes
+        if "parent_level" in block:
+            del block["parent_level"]
+        
+        # Recursively clean up children
+        if "children" in block:
+            for child in block["children"]:
+                self._cleanup_block(child) 

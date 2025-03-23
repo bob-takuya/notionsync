@@ -291,4 +291,88 @@ class TestChildPages:
             content = f.read()
             assert "Updated child page content" in content
             assert "New Section" in content
-            assert "Additional content" in content 
+            assert "Additional content" in content
+    
+    def test_page_blocks_between_content(self):
+        """Test handling of page blocks that appear between content blocks"""
+        # Create content for the main page with a child page between paragraphs
+        main_content_before = [
+            {
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": [{"type": "text", "text": {"content": "This is content before the child page."}}]
+                }
+            },
+            {
+                "object": "block",
+                "type": "heading_2",
+                "heading_2": {
+                    "rich_text": [{"type": "text", "text": {"content": "Section Before"}}]
+                }
+            }
+        ]
+        
+        # Update the main test page with the first part of content
+        self.notion_client.update_page(self.test_page_id, content=main_content_before)
+        
+        # Create a child page that will appear in the middle of content
+        embedded_page_title = "Embedded Child Page"
+        embedded_child = self.notion_client.create_page(
+            parent={"page_id": self.test_page_id},
+            properties={"title": {"title": [{"text": {"content": embedded_page_title}}]}},
+            content=[
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [{"type": "text", "text": {"content": "This is content inside the embedded child page."}}]
+                    }
+                }
+            ]
+        )
+        
+        # Add content after the child page
+        main_content_after = [
+            {
+                "object": "block",
+                "type": "heading_2",
+                "heading_2": {
+                    "rich_text": [{"type": "text", "text": {"content": "Section After"}}]
+                }
+            },
+            {
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": [{"type": "text", "text": {"content": "This is content after the child page."}}]
+                }
+            }
+        ]
+        
+        # Update the main page with additional content
+        self.notion_client.update_page(self.test_page_id, content=main_content_after)
+        
+        # Pull content from Notion
+        result = self.notion_sync.pull()
+        assert result is True, "Pull operation failed"
+        
+        # Verify files were created
+        assert os.path.exists("index.md"), "index.md file not created"
+        assert os.path.exists(f"{embedded_page_title}.md"), "Embedded child page file not created"
+        
+        # Verify the content of the main page
+        with open("index.md", "r") as f:
+            main_content = f.read()
+            assert "This is content before the child page" in main_content
+            assert "Section Before" in main_content
+            assert "Section After" in main_content
+            assert "This is content after the child page" in main_content
+            # Check if there's a reference to the child page in the main content
+            assert embedded_page_title in main_content
+        
+        # Verify the content of the child page
+        with open(f"{embedded_page_title}.md", "r") as f:
+            child_content = f.read()
+            assert embedded_page_title in child_content
+            assert "This is content inside the embedded child page" in child_content 
