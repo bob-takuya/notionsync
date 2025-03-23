@@ -167,3 +167,18 @@ NotionSync supports the following Markdown elements:
 ## License
 
 MIT 
+
+## 統合テスト
+
+統合テストは実際のNotion APIを使用してNotionSyncの機能をテストします。以下の手順で設定してください：
+
+1. Notionインテグレーションを作成し、APIキーを取得します。
+2. `.env`ファイルにAPIキーとページURLを設定します。
+3. Notionのウェブサイトでテスト用ページを開き、右上の「Share」ボタンをクリックします。
+4. インテグレーションを選択して「Invite」をクリックし、インテグレーションとページを共有します。
+5. 統合テストを実行します:
+   ```
+   python -m pytest tests/integration/test_notion_integration.py -v
+   ```
+
+統合テストはデフォルトでスキップされますが、上記の設定が完了していれば自動的に実行されます。 
