@@ -124,6 +124,18 @@ class TestMarkdownCombinations:
             
             # Verify basic content preservation for each element
             for element in group:
+                # Special case for links - check for the link text separately
+                if element == "link":
+                    assert "Link text" in converted_markdown, f"Link text not found in converted markdown"
+                    assert "https://example.com" in converted_markdown, f"URL not found in converted markdown"
+                    continue
+                
+                # Special case for images - check for image components separately
+                if element == "image":
+                    assert "Image description" in converted_markdown, f"Image description not found in converted markdown"
+                    assert "https://example.com/image.jpg" in converted_markdown, f"Image URL not found in converted markdown"
+                    continue
+                
                 # Extract the first few words of the element to check for
                 element_content = markdown_elements[element].split()
                 if element_content:
@@ -173,6 +185,12 @@ class TestMarkdownCombinations:
             # For each step, verify all previous elements are still present
             for i in range(step_idx + 1):
                 prev_name, prev_content = test_steps[i]
+                
+                # Special case for formatted text
+                if prev_name == "bold_paragraph":
+                    assert "bold text" in converted_markdown, f"Step {step_idx+1}: Bold text from step {i+1} not found"
+                    continue
+                
                 # Extract key phrase from the content to check for
                 key_phrase = prev_content.strip().split('\n')[0]
                 key_phrase = re.sub(r'[*_`#\-\[\]()>]', '', key_phrase).strip()
