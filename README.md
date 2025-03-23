@@ -379,45 +379,45 @@ Meeting Notes.md  # Will become a child page titled "Meeting Notes"
 
 MIT 
 
-## 統合テスト
+## Integration Tests
 
-NotionSyncは実際のNotion APIを使用したテストケースを実装しています。以下の手順で統合テストを実行できます。
+NotionSync implements test cases that use the actual Notion API. You can run the integration tests by following these steps:
 
-1. Notionインテグレーションを作成し、APIキーを取得します:
-   - https://www.notion.so/my-integrations にアクセス
-   - "New integration"をクリック
-   - 名前を入力（例: NotionSync Test）
-   - "Submit"をクリック
-   - "Internal Integration Token"（APIキー）をコピー
+1. **Create a Notion integration and obtain an API key:**
+   - Visit [https://www.notion.so/my-integrations](https://www.notion.so/my-integrations)
+   - Click on **"New integration"**
+   - Enter a name (e.g., *NotionSync Test*)
+   - Click **"Submit"**
+   - Copy the **"Internal Integration Token"** (API key)
 
-2. `.env`ファイルにAPIキーとページURLを設定します:
-   ```
+2. **Set the API key and page URL in the `.env` file:**
+   ```bash
    NOTION_API_KEY=your_notion_api_key_here
    NOTION_PAGE_URL=https://www.notion.so/your_page_url
-   # データベーステスト用（必要な場合）
+   # For database testing (if needed)
    # NOTION_DATABASE_ID=your_database_id_here
    ```
 
-3. Notionのウェブサイトでテスト用ページを開き、インテグレーションと共有します:
-   - Notionページを開く
-   - 右上の「Share」ボタンをクリック
-   - インテグレーションを選択して「Invite」をクリック
+3. **Open a test page on the Notion website and share it with your integration:**
+   - Open the Notion page
+   - Click the **"Share"** button in the top right corner
+   - Select the integration and click **"Invite"**
 
-4. 統合テストを実行します:
-   ```
+4. **Run the integration tests:**
+   ```bash
    python -m pytest tests/integration/test_notion_workflow.py -v
    ```
 
-これにより、以下のユースケースがテストされます:
+This will test the following use cases:
 
-- 初期セットアップとindex.md自動生成
-- ローカルでの文書作成とstatusコマンド
-- commitコマンドの実行
-- pushコマンドの実行
-- Notion上での編集後のpullコマンド
-- logコマンドの検証
-- ローカル編集後の再編集フロー
-- エラーハンドリングおよび不正操作の検証
-- データベース統合テスト（NOTION_DATABASE_ID設定時）
+- Initial setup and automatic generation of `index.md`
+- Local document creation and the status command
+- Execution of the commit command
+- Execution of the push command
+- Pull command after editing on Notion
+- Verification of the log command
+- Re-editing flow after local edits
+- Error handling and validation of improper operations
+- Database integration tests (when `NOTION_DATABASE_ID` is set)
 
-テストは各ステップで一時的なディレクトリを作成し、テスト完了後に自動的に削除されます。 
+The tests create temporary directories for each step, which are automatically deleted upon completion.
